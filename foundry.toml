@@ -1,6 +1,10 @@
 [profile.default]
+ffi = true
+ast = true
+build_info = true
 src = "contracts"
 out = "out"
+extra_output = ["storageLayout"]
 libs = ["lib"]
 solc = "0.8.25"
 optimizer = true
@@ -12,5 +16,7 @@ testnet = ""
 # remappings = [
 #     "@solmate-utils/=lib/solmate/src/utils/",
 # ]
+
+
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
