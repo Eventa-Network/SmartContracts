@@ -32,13 +32,19 @@ contract StampPaymentStation {
         address indexed payer,
         string token,
         uint256 indexed amount,
-        bytes32 indexed sigHash
+        bytes32 indexed sigHash,
+        bytes32 approvalKey
     );
+
+    // function addPaymentToken(string calldata symbol, address token) external {
+    //     symbolToAddress
+    // }
 
     function pay(
         string calldata paymentToken,
         uint256 amount,
-        bytes32 sigHash
+        bytes32 sigHash,
+        bytes32 approvalKey
     ) external {
         require(sigHash != bytes32(0), "SPS: NULL_SIGHASH");
         require(stat[sigHash] == EventStatus.open, "SPS: CLOSED");
@@ -83,7 +89,7 @@ contract StampPaymentStation {
             sigHash
         );
 
-        emit PaymentArrived(msg.sender, paymentToken, amount, sigHash);
+        emit PaymentArrived(msg.sender, paymentToken, amount, sigHash, approvalKey);
     }
 
     function isTokenSupported(string calldata tokenSymbol)
