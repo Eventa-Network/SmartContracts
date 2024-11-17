@@ -14,7 +14,7 @@ contract EventFactory is EIP712, Nonces {
 
     bytes32 private constant EC_TYPEHASH =
         keccak256(
-            "EventCreation(EventInfo( bool Virtual,uint8 Transferable,uint8 Type,uint8 Limit,uint64 UTCtime,address Creator,uint128 Price,uint128 TotalSupply,bytes32 LocationHash,string Name,string Description,string[] Tags),uint256 nonce,uint256 deadline)"
+            "EventCreation(EventInfo(bool Virtual,uint8 Transferable,uint8 Type,uint8 Limit,uint64 UTCtime,address Creator,uint128 Price,uint128 TotalSupply,bytes32 LocationHash,string Name,string Description,string[] Tags),uint256 nonce,uint256 deadline)"
         );
 
     constructor(address gateway) EIP712("EvenetFactory", "1.0.0") {
@@ -23,6 +23,7 @@ contract EventFactory is EIP712, Nonces {
         GATEWAY = gateway;
     }
 
+    error AccessDenied(address caller, address callee);
     error ERC2612ExpiredSignature(uint256 deadline);
     error ERC2612InvalidSigner(address signer, address gateway);
 
@@ -31,6 +32,9 @@ contract EventFactory is EIP712, Nonces {
         uint256 deadline,
         bytes calldata signature
     ) external {
+        if (msg.sender != eventInfo.Creator)
+            revert AccessDenied(msg.sender, eventInfo.Creator);
+
         if (block.timestamp > deadline)
             revert ERC2612ExpiredSignature(deadline);
 
@@ -45,7 +49,5 @@ contract EventFactory is EIP712, Nonces {
                 ECDSA.recover(hash, signature),
                 GATEWAY
             );
-
-        
     }
 }
