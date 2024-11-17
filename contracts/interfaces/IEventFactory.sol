@@ -25,7 +25,7 @@ struct EventInfo {
 interface IEventFactory {
     event EventCreated(EventInfo eventInfo);
 
-    function createFactory(
+    function createEvent(
         EventInfo calldata eventInfo,
         uint256 deadline,
         bytes calldata signature
