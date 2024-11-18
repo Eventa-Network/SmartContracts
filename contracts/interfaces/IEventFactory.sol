@@ -23,7 +23,7 @@ struct EventInfo {
 }
 
 interface IEventFactory {
-    event EventCreated(EventInfo eventInfo);
+    event EventCreated(EventInfo eventInfo, address eventAddress);
 
     function createEvent(
         EventInfo calldata eventInfo,
