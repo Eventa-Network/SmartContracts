@@ -20,7 +20,7 @@ contract EventFactory is EIP712, Nonces, IEventFactory {
 
     bytes32 private constant EC_TYPEHASH =
         keccak256(
-            "EventCreation(EventInfo(bool Virtual,uint8 Transferable,uint8 Type,uint8 Limit,uint64 UTCtime,address Creator,uint128 Price,uint128 TotalSupply,bytes32 LocationHash,string Name,string Description,string[] Tags),uint256 nonce,uint256 deadline)"
+            "EventCreation(EventInfo(bool Virtual,uint8 Transferable,uint8 Type,uint8 Limit,uint64 UTCtime,address Creator,uint128 Price,uint128 TotalSupply,bytes32 LocationHash,string Name,string Description,string[] Tags),uint256 nonce)"
         );
 
     constructor(address gateway) EIP712("EvenetFactory", "1.0.0") {
@@ -35,19 +35,14 @@ contract EventFactory is EIP712, Nonces, IEventFactory {
     error ERC2612ExpiredSignature(uint256 deadline);
     error ERC2612InvalidSigner(address signer, address gateway);
 
-    function createEvent(
-        EventInfo calldata eventInfo,
-        uint256 deadline,
-        bytes calldata signature
-    ) external {
+    function createEvent(EventInfo calldata eventInfo, bytes calldata signature)
+        external
+    {
         if (tx.origin != eventInfo.Creator)
             revert AccessDenied(tx.origin, eventInfo.Creator);
 
-        if (block.timestamp > deadline)
-            revert ERC2612ExpiredSignature(deadline);
-
         bytes32 structHash = keccak256(
-            abi.encode(EC_TYPEHASH, eventInfo, _useNonce(tx.origin), deadline)
+            abi.encode(EC_TYPEHASH, eventInfo, _useNonce(tx.origin))
         );
 
         bytes32 hash = _hashTypedDataV4(structHash);
@@ -85,18 +80,13 @@ contract EventFactory is EIP712, Nonces, IEventFactory {
         emit EventCreated(eventInfo, clonedEvent);
     }
 
-    function addressOfClone3(EventInfo calldata eventInfo, uint256 deadline)
+    function addressOfClone3(EventInfo calldata eventInfo)
         external
         view
         returns (address)
     {
         bytes32 structHash = keccak256(
-            abi.encode(
-                EC_TYPEHASH,
-                eventInfo,
-                nonces(eventInfo.Creator) + 1,
-                deadline
-            )
+            abi.encode(EC_TYPEHASH, eventInfo, nonces(eventInfo.Creator) + 1)
         );
 
         bytes32 salt = _hashTypedDataV4(structHash);
