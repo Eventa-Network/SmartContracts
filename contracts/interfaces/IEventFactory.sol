@@ -10,7 +10,7 @@ enum Transferable {
 struct EventInfo {
     bool Virtual;
     Transferable Transferable;
-    uint8 Type; // Private Event, Public Event, Approval Event, and more for future...
+    uint8 Type; // Public Event, Approval Event, Private Event and more for future...
     uint8 Limit;
     uint64 UTCtime;
     address Creator;
@@ -27,7 +27,6 @@ interface IEventFactory {
 
     function createEvent(
         EventInfo calldata eventInfo,
-        uint256 deadline,
         bytes calldata signature
     ) external;
 }
