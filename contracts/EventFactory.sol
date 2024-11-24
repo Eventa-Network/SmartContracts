@@ -13,14 +13,14 @@ import {Event} from "./Event.sol";
 contract EventFactory is EIP712, Nonces, IEventFactory {
     using ClonesWithImmutableArgs for address;
 
-    address immutable GATEWAY;
-    address immutable IMPLEMENTATION;
+    address public immutable GATEWAY;
+    address public immutable IMPLEMENTATION;
 
     mapping(address => address[]) public CreatorPublicEvents;
 
     bytes32 private constant EC_TYPEHASH =
         keccak256(
-            "EventCreation(EventInfo(bool Virtual,uint8 Transferable,uint8 Type,uint8 Limit,uint64 UTCtime,address Creator,uint128 Price,uint128 TotalSupply,bytes32 LocationHash,string Name,string Description,string[] Tags),uint256 nonce)"
+            "EventCreation(EventInfo(bool Virtual,uint8 Transferable,uint8 Type,uint8 Limit,uint64 UTCtime,address Creator,uint128 Price,uint128 TotalSupply,bytes32 LocationRefHash,bytes32 PublicDescRefHash,bytes32 PrivateDescRefHash,string Name,string[] Tags),uint256 nonce)"
         );
 
     constructor(address gateway) EIP712("EvenetFactory", "1.0.0") {
@@ -65,31 +65,33 @@ contract EventFactory is EIP712, Nonces, IEventFactory {
             hash
         );
 
-        string[] memory ADS = eventInfo.Tags;
-
         Event(clonedEvent).init(
             eventInfo.UTCtime,
             eventInfo.Price,
             eventInfo.TotalSupply,
-            eventInfo.LocationHash,
+            eventInfo.LocationRefHash,
+            eventInfo.PublicDescRefHash,
+            eventInfo.PrivateDescRefHash,
             eventInfo.Name,
-            eventInfo.Description,
-            ADS
+            eventInfo.Tags
         );
 
-        emit EventCreated(eventInfo, clonedEvent);
+        emit EventCreated(eventInfo, clonedEvent, nonces(eventInfo.Creator));
     }
 
-    function addressOfClone3(EventInfo calldata eventInfo)
+    function getPreAddressAndNonce(EventInfo calldata eventInfo)
         external
         view
-        returns (address)
+        returns (address, uint256)
     {
         bytes32 structHash = keccak256(
             abi.encode(EC_TYPEHASH, eventInfo, nonces(eventInfo.Creator) + 1)
         );
 
         bytes32 salt = _hashTypedDataV4(structHash);
-        return ClonesWithImmutableArgs.addressOfClone3(salt);
+        return (
+            ClonesWithImmutableArgs.addressOfClone3(salt),
+            nonces(eventInfo.Creator)
+        );
     }
 }
