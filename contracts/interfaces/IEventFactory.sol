@@ -16,17 +16,25 @@ struct EventInfo {
     address Creator;
     uint128 Price;
     uint128 TotalSupply;
-    bytes32 LocationHash;
+    bytes32 LocationRefHash;
+    bytes32 PublicDescRefHash;
+    bytes32 PrivateDescRefHash;
     string Name;
-    string Description;
     string[] Tags;
 }
 
 interface IEventFactory {
-    event EventCreated(EventInfo eventInfo, address eventAddress);
+    event EventCreated(
+        EventInfo eventInfo,
+        address eventAddress,
+        uint256 usedNonce
+    );
 
-    function createEvent(
-        EventInfo calldata eventInfo,
-        bytes calldata signature
-    ) external;
+    function createEvent(EventInfo calldata eventInfo, bytes calldata signature)
+        external;
+
+    function getPreAddressAndNonce(EventInfo calldata eventInfo)
+        external
+        view
+        returns (address, uint256);
 }
