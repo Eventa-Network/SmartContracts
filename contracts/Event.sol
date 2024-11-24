@@ -30,9 +30,10 @@ contract Event is Clone {
     uint64 public UTCtime;
     uint128 public Price;
     uint128 public TotalSupply;
-    bytes32 public LocationHash;
+    bytes32 public LocationRefHash;
+    bytes32 PublicDescRefHash;
+    bytes32 PrivateDescRefHash;
     string public Name;
-    string public Description;
     string[] public Tags;
 
     modifier onlyCreator() {
@@ -45,9 +46,10 @@ contract Event is Clone {
         uint64 utcTime,
         uint128 price,
         uint128 totalSupply,
-        bytes32 locationHash,
+        bytes32 locationRefHash,
+        bytes32 publicDescRefHash,
+        bytes32 privateDescRefHash,
         string calldata name,
-        string calldata description,
         string[] calldata tags
     ) external {
         require(msg.sender == address(EventFactory()), "EVENT: ONLY_FACTORY");
@@ -55,9 +57,10 @@ contract Event is Clone {
         UTCtime = utcTime;
         Price = price;
         TotalSupply = totalSupply;
-        LocationHash = locationHash;
+        LocationRefHash = locationRefHash;
+        PublicDescRefHash = publicDescRefHash;
+        PrivateDescRefHash = privateDescRefHash;
         Name = name;
-        Description = description;
 
         uint256 tagsLength = tags.length;
         for (uint256 i; i < tagsLength; ) {
@@ -93,7 +96,9 @@ contract Event is Clone {
     }
 
     //!TODO: Needs to check signature 
-    // function changeLocationHash() external onlyCreator {}
+    // function changeLocationRefHash() external onlyCreator {}
+    // function changePublicDescRefHash() external onlyCreator {}
+    // function changePrivateDescRefHash() external onlyCreator {}
 
     function changeName(string calldata newName) external onlyCreator {
         require(
@@ -102,15 +107,6 @@ contract Event is Clone {
         );
 
         Name = newName;
-    }
-
-    function changeDesc(string calldata newDesc) external onlyCreator {
-        require(
-            bytes(newDesc).length != 0 && bytes(newDesc).length < 33,
-            "EVENT: CHECK_LENGTH"
-        );
-
-        Description = newDesc;
     }
 
     function changeTags(string[] calldata newTags) external onlyCreator {
