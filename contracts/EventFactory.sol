@@ -11,8 +11,6 @@ import {ClonesWithImmutableArgs} from "./libs/ClonesWithImmutableArgs.sol";
 import {Event} from "./Event.sol";
 
 contract EventFactory is EIP712, Nonces, IEventFactory {
-    using ClonesWithImmutableArgs for address;
-
     address public immutable GATEWAY;
     address public immutable IMPLEMENTATION;
 
@@ -20,10 +18,10 @@ contract EventFactory is EIP712, Nonces, IEventFactory {
 
     bytes32 private constant EC_TYPEHASH =
         keccak256(
-            "EventCreation(EventInfo(bool Virtual,uint8 Transferable,uint8 Type,uint8 Limit,uint64 UTCtime,address Creator,uint128 Price,uint128 TotalSupply,bytes32 LocationRefHash,bytes32 PublicDescRefHash,bytes32 PrivateDescRefHash,string Name,string[] Tags),uint256 nonce)"
+            "EventCreation(bool Virtual,uint8 Transferable,uint8 Type,uint8 Limit,uint32 UTCstartTime,uint32 UTCendTime,address Creator,uint128 Price,uint128 TotalSupply,bytes32 LocationRefHash,bytes32 PublicDescRefHash,bytes32 PrivateDescRefHash,string Name,string[3] Tags,uint256 Nonce)"
         );
 
-    constructor(address gateway) EIP712("EvenetFactory", "1.0.0") {
+    constructor(address gateway) EIP712("EventFactory", "1.0.0") {
         require(gateway != address(0), "EventFactory: NULL_GATEWAY");
 
         GATEWAY = gateway;
@@ -42,7 +40,36 @@ contract EventFactory is EIP712, Nonces, IEventFactory {
             revert AccessDenied(tx.origin, eventInfo.Creator);
 
         bytes32 structHash = keccak256(
-            abi.encode(EC_TYPEHASH, eventInfo, _useNonce(tx.origin))
+            bytes.concat(
+                abi.encode(
+                    EC_TYPEHASH,
+                    eventInfo.Virtual,
+                    eventInfo.Transferable,
+                    eventInfo.Type,
+                    eventInfo.Limit,
+                    eventInfo.UTCstartTime,
+                    eventInfo.UTCendTime,
+                    eventInfo.Creator,
+                    eventInfo.Price,
+                    eventInfo.TotalSupply
+                ),
+                abi.encodePacked(
+                    eventInfo.LocationRefHash,
+                    eventInfo.PublicDescRefHash,
+                    eventInfo.PrivateDescRefHash,
+                    keccak256(bytes(eventInfo.Name))
+                ),
+                abi.encodePacked(
+                    keccak256(
+                        abi.encodePacked(
+                            keccak256(bytes(eventInfo.Tags[0])),
+                            keccak256(bytes(eventInfo.Tags[1])),
+                            keccak256(bytes(eventInfo.Tags[2]))
+                        )
+                    )
+                ),
+                abi.encodePacked(_useNonce(tx.origin))
+            )
         );
 
         bytes32 hash = _hashTypedDataV4(structHash);
@@ -65,15 +92,29 @@ contract EventFactory is EIP712, Nonces, IEventFactory {
             hash
         );
 
-        Event(clonedEvent).init(
-            eventInfo.UTCtime,
-            eventInfo.Price,
-            eventInfo.TotalSupply,
+        // ANTI DEEP STACK
+        bytes32[3] memory ADS_HASHED_DATA = [
             eventInfo.LocationRefHash,
             eventInfo.PublicDescRefHash,
-            eventInfo.PrivateDescRefHash,
+            eventInfo.PrivateDescRefHash
+        ];
+        string[4] memory ADS_STRING = [
             eventInfo.Name,
-            eventInfo.Tags
+            eventInfo.Tags[0],
+            eventInfo.Tags[1],
+            eventInfo.Tags[2]
+        ];
+
+        Event(clonedEvent).init(
+            eventInfo.UTCstartTime,
+            eventInfo.UTCendTime,
+            eventInfo.Price,
+            eventInfo.TotalSupply,
+            ADS_HASHED_DATA[0],
+            ADS_HASHED_DATA[1],
+            ADS_HASHED_DATA[2],
+            ADS_STRING[0],
+            [ADS_STRING[1], ADS_STRING[2], ADS_STRING[3]]
         );
 
         emit EventCreated(eventInfo, clonedEvent, nonces(eventInfo.Creator));
@@ -82,16 +123,45 @@ contract EventFactory is EIP712, Nonces, IEventFactory {
     function getPreAddressAndNonce(EventInfo calldata eventInfo)
         external
         view
-        returns (address, uint256)
+        returns (address preDeployedAddress, uint256 nonce)
     {
+        nonce = nonces(eventInfo.Creator);
+
         bytes32 structHash = keccak256(
-            abi.encode(EC_TYPEHASH, eventInfo, nonces(eventInfo.Creator) + 1)
+            bytes.concat(
+                abi.encode(
+                    EC_TYPEHASH,
+                    eventInfo.Virtual,
+                    eventInfo.Transferable,
+                    eventInfo.Type,
+                    eventInfo.Limit,
+                    eventInfo.UTCstartTime,
+                    eventInfo.UTCendTime,
+                    eventInfo.Creator,
+                    eventInfo.Price,
+                    eventInfo.TotalSupply
+                ),
+                abi.encodePacked(
+                    eventInfo.LocationRefHash,
+                    eventInfo.PublicDescRefHash,
+                    eventInfo.PrivateDescRefHash,
+                    keccak256(bytes(eventInfo.Name))
+                ),
+                abi.encodePacked(
+                    keccak256(
+                        abi.encodePacked(
+                            keccak256(bytes(eventInfo.Tags[0])),
+                            keccak256(bytes(eventInfo.Tags[1])),
+                            keccak256(bytes(eventInfo.Tags[2]))
+                        )
+                    )
+                ),
+                abi.encodePacked(nonce)
+            )
         );
 
-        bytes32 salt = _hashTypedDataV4(structHash);
-        return (
-            ClonesWithImmutableArgs.addressOfClone3(salt),
-            nonces(eventInfo.Creator)
+        preDeployedAddress = ClonesWithImmutableArgs.addressOfClone3(
+            _hashTypedDataV4(structHash)
         );
     }
 }

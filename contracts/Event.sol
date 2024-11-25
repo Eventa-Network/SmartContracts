@@ -27,14 +27,15 @@ contract Event is Clone {
         return IEventFactory(_getArgAddress(23));
     }
 
-    uint64 public UTCtime;
+    uint32 public UTCstartTime;
+    uint32 public UTCendTime;
     uint128 public Price;
     uint128 public TotalSupply;
     bytes32 public LocationRefHash;
     bytes32 PublicDescRefHash;
     bytes32 PrivateDescRefHash;
     string public Name;
-    string[] public Tags;
+    string[3] public Tags;
 
     modifier onlyCreator() {
         require(tx.origin == Creator(), "EVENT: ONLY_CREATOR");
@@ -43,39 +44,40 @@ contract Event is Clone {
     }
 
     function init(
-        uint64 utcTime,
+        uint32 utcStartTime,
+        uint32 utcEndTime,
         uint128 price,
         uint128 totalSupply,
         bytes32 locationRefHash,
         bytes32 publicDescRefHash,
         bytes32 privateDescRefHash,
         string calldata name,
-        string[] calldata tags
+        string[3] calldata tags
     ) external {
         require(msg.sender == address(EventFactory()), "EVENT: ONLY_FACTORY");
 
-        UTCtime = utcTime;
         Price = price;
         TotalSupply = totalSupply;
         LocationRefHash = locationRefHash;
         PublicDescRefHash = publicDescRefHash;
         PrivateDescRefHash = privateDescRefHash;
+
+        (UTCstartTime, UTCendTime) = (utcStartTime, utcEndTime);
+
         Name = name;
 
-        uint256 tagsLength = tags.length;
-        for (uint256 i; i < tagsLength; ) {
-            Tags[i] = tags[i];
-
-            unchecked {
-                i++;
-            }
-        }
+        Tags[0] = tags[0];
+        Tags[1] = tags[1];
+        Tags[2] = tags[2];
     }
 
-    function changeUTCtime(uint64 utcTime) external onlyCreator {
-        require(utcTime > block.timestamp, "EVENT: ONLY_BIGGER_TS");
-
-        UTCtime = utcTime;
+    function changeUTCtime(bytes calldata utcTime) external onlyCreator {
+        (UTCstartTime, UTCendTime) = abi.decode(utcTime, (uint32, uint32));
+        require(
+            UTCstartTime > block.timestamp && UTCendTime > block.timestamp,
+            "EVENT: ONLY_BIGGER_TS"
+        );
+        require(UTCstartTime <= UTCendTime, "EVENT: CHECK_END_TIME");
     }
 
     function changePrice(uint128 newPrice) external onlyCreator {
@@ -90,12 +92,10 @@ contract Event is Clone {
 
         require(Type() != 1, "EVENT: CANT_CHANGE_APPROVAL_EVENT");
 
-        // IStamper(STAMPER).CheckCurrentSupply(address(this), SigHash);
-
         TotalSupply = newTotalSupply;
     }
 
-    //!TODO: Needs to check signature 
+    //!TODO: Needs to check signature
     // function changeLocationRefHash() external onlyCreator {}
     // function changePublicDescRefHash() external onlyCreator {}
     // function changePrivateDescRefHash() external onlyCreator {}
@@ -109,15 +109,9 @@ contract Event is Clone {
         Name = newName;
     }
 
-    function changeTags(string[] calldata newTags) external onlyCreator {
-        require(newTags.length < 4 && newTags.length != 0);
-
-        uint256 tagsLength = newTags.length;
-        delete Tags;
-        for (uint256 i; i < tagsLength; ) {
-            require(bytes(newTags[i]).length < 33, "EVENT: CHECK_LENGTH");
-
-            Tags[i] = newTags[i];
-        }
+    function changeTags(string[3] calldata newTags) external onlyCreator {
+        Tags[0] = newTags[0];
+        Tags[1] = newTags[1];
+        Tags[2] = newTags[2];
     }
 }
