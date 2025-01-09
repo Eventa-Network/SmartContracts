@@ -117,7 +117,11 @@ contract EventFactory is EIP712, Nonces, IEventFactory {
             [ADS_STRING[1], ADS_STRING[2], ADS_STRING[3]]
         );
 
-        emit EventCreated(eventInfo, clonedEvent, nonces(eventInfo.Creator));
+        emit EventCreated(
+            eventInfo,
+            clonedEvent,
+            nonces(eventInfo.Creator) - 1
+        );
     }
 
     function getPreAddressAndNonce(EventInfo calldata eventInfo)
