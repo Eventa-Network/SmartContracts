@@ -1,12 +1,10 @@
 //  SPDX-License-Identifier: -- STAMP --
 pragma solidity 0.8.25;
 
-import {IEventFactory} from "./interfaces/IEventFactory.sol";
+import {IGroveEventFactory} from "./interfaces/IGroveEventFactory.sol";
 import {Clone} from "./libs/Clone.sol";
 
-contract Event is Clone {
-    error CantChangePrice();
-
+contract GroveEvent is Clone {
     function Virtual() public pure returns (bool) {
         return _getArgUint8(0) == 1;
     }
@@ -23,8 +21,8 @@ contract Event is Clone {
         return _getArgAddress(3);
     }
 
-    function EventFactory() public pure returns (IEventFactory) {
-        return IEventFactory(_getArgAddress(23));
+    function GroveEventFactory() public pure returns (IGroveEventFactory) {
+        return IGroveEventFactory(_getArgAddress(23));
     }
 
     uint32 public UTCstartTime;
@@ -38,7 +36,7 @@ contract Event is Clone {
     string[3] public Tags;
 
     modifier onlyCreator() {
-        require(tx.origin == Creator(), "EVENT: ONLY_CREATOR");
+        require(tx.origin == Creator(), "GroveEvent: ONLY_CREATOR");
 
         _;
     }
@@ -54,7 +52,10 @@ contract Event is Clone {
         string calldata name,
         string[3] calldata tags
     ) external {
-        require(msg.sender == address(EventFactory()), "EVENT: ONLY_FACTORY");
+        require(
+            msg.sender == address(GroveEventFactory()),
+            "GroveEvent: ONLY_FACTORY"
+        );
 
         Price = price;
         TotalSupply = totalSupply;
@@ -75,22 +76,21 @@ contract Event is Clone {
         (UTCstartTime, UTCendTime) = abi.decode(utcTime, (uint32, uint32));
         require(
             UTCstartTime > block.timestamp && UTCendTime > block.timestamp,
-            "EVENT: ONLY_BIGGER_TS"
+            "GroveEvent: ONLY_BIGGER_TS"
         );
-        require(UTCstartTime <= UTCendTime, "EVENT: CHECK_END_TIME");
+        require(UTCstartTime <= UTCendTime, "GroveEvent: CHECK_END_TIME");
     }
 
     function changePrice(uint128 newPrice) external onlyCreator {
         if (Price == 0 || (newPrice == 0 && Price != 0))
-            revert CantChangePrice();
-
+            revert("GroveEvent: CANT_CHANGE_PRICE");
         Price = newPrice;
     }
 
     function changeTotalSupply(uint128 newTotalSupply) external onlyCreator {
-        require(newTotalSupply == 0, "EVENT: TOTAL_SUPPLY_CANT_BE_ZERO");
+        require(newTotalSupply == 0, "GroveEvent: TOTAL_SUPPLY_CANT_BE_ZERO");
 
-        require(Type() != 1, "EVENT: CANT_CHANGE_APPROVAL_EVENT");
+        require(Type() != 1, "GroveEvent: CANT_CHANGE_APPROVAL_EVENT");
 
         TotalSupply = newTotalSupply;
     }
@@ -103,7 +103,7 @@ contract Event is Clone {
     function changeName(string calldata newName) external onlyCreator {
         require(
             bytes(newName).length != 0 && bytes(newName).length < 33,
-            "EVENT: CHECK_LENGTH"
+            "GroveEvent: CHECK_LENGTH"
         );
 
         Name = newName;
