@@ -1,4 +1,4 @@
-//  SPDX-License-Identifier: -- GROVE --
+//  SPDX-License-Identifier: -- Grove --
 pragma solidity 0.8.25;
 
 import {IGroveEventFactory, EventInfo, Transferable} from "./interfaces/IGroveEventFactory.sol";
