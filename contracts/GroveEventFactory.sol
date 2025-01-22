@@ -1,16 +1,16 @@
-//  SPDX-License-Identifier: -- STAMP --
+//  SPDX-License-Identifier: -- GROVE --
 pragma solidity 0.8.25;
 
-import {IEventFactory, EventInfo, Transferable} from "./interfaces/IEventFactory.sol";
+import {IGroveEventFactory, EventInfo, Transferable} from "./interfaces/IGroveEventFactory.sol";
 
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {Nonces} from "./Nonces.sol";
 import {ClonesWithImmutableArgs} from "./libs/ClonesWithImmutableArgs.sol";
 
-import {Event} from "./Event.sol";
+import {GroveEvent} from "./GroveEvent.sol";
 
-contract EventFactory is EIP712, Nonces, IEventFactory {
+contract GroveEventFactory is EIP712, Nonces, IGroveEventFactory {
     address public immutable GATEWAY;
     address public immutable IMPLEMENTATION;
 
@@ -21,23 +21,21 @@ contract EventFactory is EIP712, Nonces, IEventFactory {
             "EventCreation(bool Virtual,uint8 Transferable,uint8 Type,uint8 Limit,uint32 UTCstartTime,uint32 UTCendTime,address Creator,uint128 Price,uint128 TotalSupply,bytes32 LocationRefHash,bytes32 PublicDescRefHash,bytes32 PrivateDescRefHash,string Name,string[3] Tags,uint256 Nonce)"
         );
 
-    constructor(address gateway) EIP712("EventFactory", "1.0.0") {
-        require(gateway != address(0), "EventFactory: NULL_GATEWAY");
+    constructor(address gateway) EIP712("GroveEventFactory", "1.0.0") {
+        require(gateway != address(0), "GroveEventFactory: NULL_GATEWAY");
 
         GATEWAY = gateway;
 
-        IMPLEMENTATION = address(new Event());
+        IMPLEMENTATION = address(new GroveEvent());
     }
-
-    error AccessDenied(address caller, address callee);
-    error ERC2612ExpiredSignature(uint256 deadline);
-    error ERC2612InvalidSigner(address signer, address gateway);
 
     function createEvent(EventInfo calldata eventInfo, bytes calldata signature)
         external
     {
-        if (tx.origin != eventInfo.Creator)
-            revert AccessDenied(tx.origin, eventInfo.Creator);
+        require(
+            tx.origin == eventInfo.Creator,
+            "GroveEventFactory: ACCESS_DENIED"
+        );
 
         bytes32 structHash = keccak256(
             bytes.concat(
@@ -74,11 +72,10 @@ contract EventFactory is EIP712, Nonces, IEventFactory {
 
         bytes32 hash = _hashTypedDataV4(structHash);
 
-        if (ECDSA.recover(hash, signature) != GATEWAY)
-            revert ERC2612InvalidSigner(
-                ECDSA.recover(hash, signature),
-                GATEWAY
-            );
+        require(
+            ECDSA.recover(hash, signature) == GATEWAY,
+            "GroveEventFactory: ERC2612_INVALID_SIGNER"
+        );
 
         address clonedEvent = ClonesWithImmutableArgs.clone3(
             IMPLEMENTATION,
@@ -105,7 +102,7 @@ contract EventFactory is EIP712, Nonces, IEventFactory {
             eventInfo.Tags[2]
         ];
 
-        Event(clonedEvent).init(
+        GroveEvent(clonedEvent).init(
             eventInfo.UTCstartTime,
             eventInfo.UTCendTime,
             eventInfo.Price,
