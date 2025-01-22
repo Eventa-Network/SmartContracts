@@ -1,4 +1,4 @@
-//  SPDX-License-Identifier: -- STAMP --
+//  SPDX-License-Identifier: -- Grove --
 pragma solidity 0.8.25;
 
 // [true,"1","2","5","1742465494","1742475494","0xA390E1dB7589b809ED3B01bE96fC8168DaCD15c0","1000000000000000000","1000","0xdf6966c971051c3d54ec59162606531493a51404a002842f56009d7e5cf4a8c7","0xdf6966c971051c3d54ec59162606531493a51404a002842f56009d7e5cf4a8c7","0xdf6966c971051c3d54ec59162606531493a51404a002842f56009d7e5cf4a8c7","Test Event",["Crypto","DevCon","ETH"]]
@@ -26,7 +26,7 @@ struct EventInfo {
     string[3] Tags;
 }
 
-interface IEventFactory {
+interface IGroveEventFactory {
     event EventCreated(
         EventInfo eventInfo,
         address eventAddress,
