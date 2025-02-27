@@ -2,18 +2,16 @@
 pragma solidity 0.8.25;
 
 import {IGroveEventFactory, EventInfo, Transferable} from "./interfaces/IGroveEventFactory.sol";
-
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {Nonces} from "./Nonces.sol";
 import {ClonesWithImmutableArgs} from "./libs/ClonesWithImmutableArgs.sol";
-
 import {GroveEvent} from "./GroveEvent.sol";
 
 contract GroveEventFactory is EIP712, Nonces, IGroveEventFactory {
     address public immutable GATEWAY;
     address public immutable IMPLEMENTATION;
-
+    address[] public allEvents;
     mapping(address => address[]) public CreatorPublicEvents;
 
     bytes32 private constant EC_TYPEHASH =
@@ -89,6 +87,8 @@ contract GroveEventFactory is EIP712, Nonces, IGroveEventFactory {
             hash
         );
 
+        allEvents.push(clonedEvent);
+
         // ANTI DEEP STACK
         bytes32[3] memory ADS_HASHED_DATA = [
             eventInfo.LocationRefHash,
@@ -119,6 +119,74 @@ contract GroveEventFactory is EIP712, Nonces, IGroveEventFactory {
             clonedEvent,
             nonces(eventInfo.Creator) - 1
         );
+    }
+
+    function paginatedEvents(uint256 page)
+        external
+        view
+        returns (
+            uint256 currentPage,
+            uint256 totalPages,
+            address[] memory paggedArray
+        )
+    {
+        if (allEvents.length == 0)
+            return (currentPage, totalPages, paggedArray);
+        else if (allEvents.length < 11) {
+            paggedArray = new address[](allEvents.length);
+
+            uint256 x;
+            while (true) {
+                paggedArray[x] = allEvents[allEvents.length - 1 - x];
+
+                if (x == allEvents.length - 1) break;
+
+                unchecked {
+                    x++;
+                }
+            }
+
+            return (1, 1, paggedArray);
+        }
+
+        if (page == 0) page = 1;
+
+        totalPages = allEvents.length / 10;
+
+        uint256 diffLength = allEvents.length - (totalPages * 10);
+
+        if (totalPages * 10 < allEvents.length) totalPages++;
+        if (page > totalPages) page = totalPages;
+        currentPage = page;
+
+        uint256 firstIndex;
+        uint256 lastIndex;
+        if (page == 1) {
+            firstIndex = allEvents.length - 1;
+            lastIndex = firstIndex - 10;
+        } else if (page == totalPages)
+            firstIndex = diffLength == 0 ? firstIndex = 9 : diffLength - 1;
+        else {
+            firstIndex +=
+                ((totalPages - page) * 10) +
+                (diffLength != 0 ? diffLength - 1 : 0);
+            lastIndex +=
+                ((totalPages - page - 1) * 10) +
+                (diffLength != 0 ? diffLength - 1 : 0);
+        }
+
+        paggedArray = new address[]((firstIndex + 1) - lastIndex);
+
+        uint256 i;
+        while (true) {
+            paggedArray[i] = allEvents[firstIndex];
+
+            if (firstIndex == lastIndex) break;
+            unchecked {
+                i++;
+                firstIndex--;
+            }
+        }
     }
 
     function getPreAddressAndNonce(EventInfo calldata eventInfo)
