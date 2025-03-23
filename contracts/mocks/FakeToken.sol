@@ -6,7 +6,12 @@ contract FakeERC20 {
     string public symbol = "USDC";
     uint256 public decimals = 18;
 
-    function approve(address spender, uint256 amount) external returns (bool) {}
+    mapping(address => mapping(address => uint256)) public allowance;
+
+    function approve(address guy, uint256 wad) public returns (bool) {
+        allowance[msg.sender][guy] = wad;
+        return true;
+    }
 
     function transferFrom(
         address from,
