@@ -1,10 +1,10 @@
-//  SPDX-License-Identifier: -- Grove --
+//  SPDX-License-Identifier: -- Ewana --
 pragma solidity 0.8.25;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IUSDCswapper} from "./interfaces/IUSDCswapper.sol";
 
-contract GroveChargeStation {
+contract EwanaChargeStation {
     struct UserTX {
         address user;
         address platform;
@@ -38,7 +38,7 @@ contract GroveChargeStation {
     constructor(address usdc, address swapper) {
         require(
             usdc != address(0) && swapper != address(0),
-            "GroveChargeStation: ZERO_ADDRESS_PROVIDED"
+            "EwanaChargeStation: ZERO_ADDRESS_PROVIDED"
         );
         USDC = IERC20(usdc);
         USDC_SWAPPER = IUSDCswapper(swapper);
@@ -53,12 +53,12 @@ contract GroveChargeStation {
     ) external {
         require(
             token != address(0),
-            "GroveChargeStation: ZERO_ADDRESS_PROVIDED"
+            "EwanaChargeStation: ZERO_ADDRESS_PROVIDED"
         );
-        require(amount != 0, "GroveChargeStation: ZERO_AMOUNT_PROVIDED");
+        require(amount != 0, "EwanaChargeStation: ZERO_AMOUNT_PROVIDED");
         require(
             platform != address(0),
-            "GroveChargeStation: ZERO_ADDRESS_PROVIDED"
+            "EwanaChargeStation: ZERO_ADDRESS_PROVIDED"
         );
         if (for_ == address(0)) for_ = msg.sender;
 
@@ -94,7 +94,7 @@ contract GroveChargeStation {
     function transferUSDC(address to, uint256 amount) external {
         require(
             platformUSDCbalance[msg.sender] >= amount,
-            "GroveChargeStation: INSUFFICIENT_USDC_BALANCE"
+            "EwanaChargeStation: INSUFFICIENT_USDC_BALANCE"
         );
 
         unchecked {

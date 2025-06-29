@@ -1,10 +1,10 @@
-//  SPDX-License-Identifier: -- Grove --
+//  SPDX-License-Identifier: -- Ewana --
 pragma solidity 0.8.25;
 
-import {IGroveEventFactory} from "./interfaces/IGroveEventFactory.sol";
+import {IEventaFactory} from "./interfaces/IEventaFactory.sol";
 import {Clone} from "./libs/Clone.sol";
 
-contract GroveEvent is Clone {
+contract Eventa is Clone {
     function Virtual() public pure returns (bool) {
         return _getArgUint8(0) == 1;
     }
@@ -21,8 +21,8 @@ contract GroveEvent is Clone {
         return _getArgAddress(3);
     }
 
-    function GroveEventFactory() public pure returns (IGroveEventFactory) {
-        return IGroveEventFactory(_getArgAddress(23));
+    function EventaFactory() public pure returns (IEventaFactory) {
+        return IEventaFactory(_getArgAddress(23));
     }
 
     uint32 public UTCstartTime;
@@ -36,7 +36,7 @@ contract GroveEvent is Clone {
     string[3] public Tags;
 
     modifier onlyCreator() {
-        require(tx.origin == Creator(), "GroveEvent: ONLY_CREATOR");
+        require(tx.origin == Creator(), "Eventa: ONLY_CREATOR");
 
         _;
     }
@@ -53,8 +53,8 @@ contract GroveEvent is Clone {
         string[3] calldata tags
     ) external {
         require(
-            msg.sender == address(GroveEventFactory()),
-            "GroveEvent: ONLY_FACTORY"
+            msg.sender == address(EventaFactory()),
+            "Eventa: ONLY_FACTORY"
         );
 
         Price = price;
@@ -76,21 +76,21 @@ contract GroveEvent is Clone {
         (UTCstartTime, UTCendTime) = abi.decode(utcTime, (uint32, uint32));
         require(
             UTCstartTime > block.timestamp && UTCendTime > block.timestamp,
-            "GroveEvent: ONLY_BIGGER_TS"
+            "Eventa: ONLY_BIGGER_TS"
         );
-        require(UTCstartTime <= UTCendTime, "GroveEvent: CHECK_END_TIME");
+        require(UTCstartTime <= UTCendTime, "Eventa: CHECK_END_TIME");
     }
 
     function changePrice(uint128 newPrice) external onlyCreator {
         if (Price == 0 || (newPrice == 0 && Price != 0))
-            revert("GroveEvent: CANT_CHANGE_PRICE");
+            revert("Eventa: CANT_CHANGE_PRICE");
         Price = newPrice;
     }
 
     function changeTotalSupply(uint128 newTotalSupply) external onlyCreator {
-        require(newTotalSupply == 0, "GroveEvent: TOTAL_SUPPLY_CANT_BE_ZERO");
+        require(newTotalSupply == 0, "Eventa: TOTAL_SUPPLY_CANT_BE_ZERO");
 
-        require(Type() != 1, "GroveEvent: CANT_CHANGE_APPROVAL_EVENT");
+        require(Type() != 1, "Eventa: CANT_CHANGE_APPROVAL_EVENT");
 
         TotalSupply = newTotalSupply;
     }
@@ -103,7 +103,7 @@ contract GroveEvent is Clone {
     function changeName(string calldata newName) external onlyCreator {
         require(
             bytes(newName).length != 0 && bytes(newName).length < 33,
-            "GroveEvent: CHECK_LENGTH"
+            "Eventa: CHECK_LENGTH"
         );
 
         Name = newName;
