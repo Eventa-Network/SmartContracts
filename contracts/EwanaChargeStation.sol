@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IUSDCswapper} from "./interfaces/IUSDCswapper.sol";
+import {IUSDTswapper} from "./interfaces/IUSDTswapper.sol";
 
 contract EwanaChargeStation {
     struct UserTX {
@@ -10,38 +10,38 @@ contract EwanaChargeStation {
         address platform;
         address token;
         uint256 tokenAmount;
-        uint256 amountInUSDC;
+        uint256 amountInUSDT;
         bytes32 txID;
     }
 
-    IERC20 public immutable USDC;
-    IUSDCswapper public immutable USDC_SWAPPER;
+    IERC20 public immutable USDT;
+    IUSDTswapper public immutable USDT_SWAPPER;
 
     UserTX[] public usersTXs;
-    mapping(address => uint256) public platformUSDCbalance;
+    mapping(address => uint256) public platformUSDTbalance;
     mapping(address => uint256) public userNonce;
 
     event Charged(
         address indexed chargedFor,
-        uint256 indexed amountInUSDC,
+        uint256 indexed amountInUSDT,
         address indexed platform,
         address charger
     );
 
-    event USDCtransferedByPlatform(
+    event USDTtransferedByPlatform(
         address indexed to,
-        uint256 indexed amountInUSDC,
+        uint256 indexed amountInUSDT,
         address indexed platform,
-        uint256 currentPlatformUSDCbalance
+        uint256 currentPlatformUSDTbalance
     );
 
-    constructor(address usdc, address swapper) {
+    constructor(address usdt, address swapper) {
         require(
-            usdc != address(0) && swapper != address(0),
+            usdt != address(0) && swapper != address(0),
             "EwanaChargeStation: ZERO_ADDRESS_PROVIDED"
         );
-        USDC = IERC20(usdc);
-        USDC_SWAPPER = IUSDCswapper(swapper);
+        USDT = IERC20(usdt);
+        USDT_SWAPPER = IUSDTswapper(swapper);
     }
 
     function charge(
@@ -62,52 +62,52 @@ contract EwanaChargeStation {
         );
         if (for_ == address(0)) for_ = msg.sender;
 
-        uint256 amountInUSDC;
+        uint256 amountInUSDT;
         IERC20(token).transferFrom(msg.sender, address(this), amount);
 
-        if (token == address(USDC)) {
-            amountInUSDC = amount;
+        if (token == address(USDT)) {
+            amountInUSDT = amount;
 
-            emit Charged(for_, amountInUSDC, platform, msg.sender);
+            emit Charged(for_, amountInUSDT, platform, msg.sender);
         } else {
-            // TODO: SWAP INTO USDC
-            USDC_SWAPPER.isSwappable(token, amount, helpPath);
-            amountInUSDC = USDC_SWAPPER.swapIntoUSDC(token, amount, helpPath);
+            // TODO: SWAP INTO USDT
+            USDT_SWAPPER.isSwappable(token, amount, helpPath);
+            amountInUSDT = USDT_SWAPPER.swapIntoUSDT(token, amount, helpPath);
 
-            emit Charged(for_, amountInUSDC, platform, msg.sender);
+            emit Charged(for_, amountInUSDT, platform, msg.sender);
         }
 
-        platformUSDCbalance[platform] += amountInUSDC;
+        platformUSDTbalance[platform] += amountInUSDT;
         usersTXs.push(
             UserTX(
                 for_,
                 platform,
                 token,
                 amount,
-                amountInUSDC,
+                amountInUSDT,
                 (keccak256(abi.encodePacked(for_, userNonce[for_])))
             )
         );
         userNonce[for_]++;
     }
 
-    function transferUSDC(address to, uint256 amount) external {
+    function transferUSDT(address to, uint256 amount) external {
         require(
-            platformUSDCbalance[msg.sender] >= amount,
-            "EwanaChargeStation: INSUFFICIENT_USDC_BALANCE"
+            platformUSDTbalance[msg.sender] >= amount,
+            "EwanaChargeStation: INSUFFICIENT_USDT_BALANCE"
         );
 
         unchecked {
-            platformUSDCbalance[msg.sender] -= amount;
+            platformUSDTbalance[msg.sender] -= amount;
         }
 
-        USDC.transfer(to, amount);
+        USDT.transfer(to, amount);
 
-        emit USDCtransferedByPlatform(
+        emit USDTtransferedByPlatform(
             to,
             amount,
             msg.sender,
-            platformUSDCbalance[msg.sender]
+            platformUSDTbalance[msg.sender]
         );
     }
 

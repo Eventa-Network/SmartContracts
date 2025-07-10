@@ -1,14 +1,14 @@
 //  SPDX-License-Identifier: -- Ewana --
 pragma solidity 0.8.25;
 
-interface IUSDCswapper {
+interface IUSDTswapper {
     function isSwappable(
         address token,
         uint256 amount,
         address[] calldata helpPath
     ) external view returns (bool);
 
-    function swapIntoUSDC(
+    function swapIntoUSDT(
         address token,
         uint256 amount,
         address[] calldata helpPath
