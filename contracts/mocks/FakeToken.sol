@@ -1,21 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity 0.8.30;
 
-contract FakeERC20 {
-    string public name = "USD Coin";
-    string public symbol = "USDC";
-    uint256 public decimals = 18;
+import {ERC20} from "openzeppelin-contracts/token/ERC20/ERC20.sol";
 
-    mapping(address => mapping(address => uint256)) public allowance;
+contract FakeERC20 is ERC20 {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
-    function approve(address guy, uint256 wad) public returns (bool) {
-        allowance[msg.sender][guy] = wad;
-        return true;
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
     }
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) external returns (bool) {}
 }
